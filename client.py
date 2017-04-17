@@ -1,4 +1,5 @@
 from tkinter import *
+from tkinter import messagebox
 import sys
 import socket
 import threading
@@ -50,10 +51,13 @@ def startchat(ip, port):
         #Receiving Data
         def recv():
             while True:
-                data = s.recv(2048)
-                data = data.decode('utf-8')
-                element_chat_display.insert(END, data)
-                element_chat_display.see(END)
+                try:
+                    data = s.recv(2048)
+                    data = data.decode('utf-8')
+                    element_chat_display.insert(END, data)
+                    element_chat_display.see(END)
+                except:
+                    pass
                 
 
 
@@ -101,7 +105,12 @@ def startchat(ip, port):
         root.protocol("WM_DELETE_WINDOW", on_closing)
         root.mainloop()
     except ConnectionRefusedError:
-        print("Failed")
+        temp = Tk()
+        temp.withdraw()
+        var = messagebox.showinfo("Error" , "Connection failed")
+        load()
+        temp.destroy()
+        
         
 def help():
     root = Tk()
@@ -111,10 +120,8 @@ def help():
     element_help_text = Label(root, text="help - Displays a list of commands\nload - Loads ECHO")
     element_help_text.grid(row=0, column=0)
     element_help_text.configure(background="white")
-
     def end():
         root.destroy()
-
     element_button_connect = Button(root, text="Ok", command=end, height=2, width=12)
     element_button_connect.grid(row=1, column=0)
 
@@ -162,9 +169,34 @@ def newserv():
     element_input_port = Entry(new_serv_win)
     element_input_port.grid(row=3, column=1)
     
-    element_button_connect = Button(new_serv_win, text="Add new server", command=cb, height=2, width=12)
-    element_button_connect.grid(row=4, column=1)
+    element_button_new_serv = Button(new_serv_win, text="Add server", command=cb, height=2, width=12)
+    element_button_new_serv.grid(row=4, column=1)
 
+
+def delserv():
+    del_serv_win = Tk()
+    del_serv_win.title("ECHO")
+    del_serv_win.configure(background="white")
+    c.execute("SELECT * FROM servers")
+    data = c.fetchall()
+    global var_menu_choices
+    var_menu_choices = []
+    for item in data:
+        var_menu_choices.append(item[0])
+    var_del_serv_menu_text = StringVar(del_serv_win)
+    var_del_serv_menu_text.set("Choose a server")
+    def cb():
+        name = var_del_serv_menu_text.get()
+        c.execute("DELETE FROM servers WHERE name =(?)", [name])
+        conn.commit()
+        del_serv_win.destroy()
+        win_menu.destroy()
+        load()
+    element_server_menu = OptionMenu(del_serv_win, var_del_serv_menu_text, *var_menu_choices)
+    element_server_menu.grid(row=0, column=0)
+    element_button_new_serv = Button(del_serv_win, text="Delete server", command=cb, height=2, width=12)
+    element_button_new_serv.grid(row=0, column=1)
+    
     
 def load():
     global win_menu
@@ -206,11 +238,14 @@ def load():
 
     element_button_connect = Button(win_menu, text="Add new server", command=newserv, height=2, width=12)
     element_button_connect.grid(row=2, column=0)
+    
+    element_button_del_serv = Button(win_menu, text="Delete a server", command=delserv, height=2, width=12)
+    element_button_del_serv.grid(row=3, column=0)
 
     
     win_menu.mainloop()
 
-    
+load() 
 
 
 
