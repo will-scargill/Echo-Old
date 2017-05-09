@@ -4,6 +4,9 @@ import sys
 import socket
 import threading
 import sqlite3
+import json
+
+
 
 #========================================
 # SQLite Setup
@@ -38,72 +41,105 @@ def startchat(ip, port):
     win_menu.destroy()
     #========================================
     #Connection Setup
+    def example():
+        pass
 
+    
     try:
+        
+        #========================================
+        def joinchannel():
+            print(var_channel_select_text.get())
+            channel = var_channel_select_text.get()
+            s.send(channel.encode('utf-8'))
+            #========================================
+            #Receiving Data
+            def recv():
+                while True:
+                    try:
+                        data = s.recv(2048)
+                        data = data.decode('utf-8')
+                        element_chat_display.insert(END, data)
+                        element_chat_display.see(END)
+                    except:
+                        pass
+                    
+
+
+            #========================================
+
+            #========================================
+            #Chat Window Setup
+            root = Tk()
+            root.title("ECHO")
+            root.configure(background="white")
+            root.resizable(width=False, height=False)
+
+            #========================================
+
+            #========================================
+            #Terminal Setup
+            element_chat_display = Listbox(root, height=20, width=100)
+            element_chat_display.grid(row=1, column=3)
+            for i in range(element_chat_display.cget('height')-1):
+                element_chat_display.insert(END, '')
+            element_chat_entry = Entry(root, width=100)
+            element_chat_entry.grid(row=2, column=3)
+
+            def func_returninput(event):
+                inp = element_chat_entry.get()
+                #element_chat_display.insert(END, element_chat_entry.get())
+                #element_chat_display.see(END)
+                element_chat_entry.delete(0, END)
+                s.send(str.encode(inp))
+
+
+            element_chat_output = Text(root, height=20, width=25)
+            element_chat_output.grid(row=1, column=1)
+            element_chat_output.config(state=DISABLED)
+
+            root.bind('<Return>', func_returninput)
+            #========================================
+
+            thread_recv_data = threading.Thread(target=recv)
+            thread_recv_data.start()
+            #========================================
+            def on_closing():
+                s.close()
+                root.destroy()
+            root.protocol("WM_DELETE_WINDOW", on_closing)
+            root.mainloop()
+            
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((ip, port))
 
+        #s.send(str.encode("[REQ][clientreq]"))
+        channel_select_win = Tk()
+        channel_select_win.title("ECHO")
+        channel_select_win.configure(background="white")
+        channel_select_win.resizable(width=False, height=False)
+        #channel_select_win.geometry("200x200")
+        channels = []
+        data = s.recv(2048)
+        data = json.loads(data.decode('utf-8'))
+        text = Label(channel_select_win, text="Choose a channel", bg="white")
+        text.grid(row=0, column=0)
 
+        
+        var_channel_choices = []
+        for item in data:
+            var_channel_choices.append(item)
+        global var_menu_text
+        var_channel_select_text = StringVar(channel_select_win)
+        var_channel_select_text.set("Choose a channel")
+        element_channel_menu = OptionMenu(channel_select_win, var_channel_select_text, *var_channel_choices)
+        element_channel_menu.grid(row=1, column=0)
 
-        #========================================
+        element_button_connect = Button(channel_select_win, text="Join channel", command=joinchannel, height=2, width=12)
+        element_button_connect.grid(row=1, column=1, rowspan=2)
 
-        #========================================
-        #Receiving Data
-        def recv():
-            while True:
-                try:
-                    data = s.recv(2048)
-                    data = data.decode('utf-8')
-                    element_chat_display.insert(END, data)
-                    element_chat_display.see(END)
-                except:
-                    pass
-                
-
-
-        #========================================
-
-        #========================================
-        #Chat Window Setup
-        root = Tk()
-        root.title("ECHO")
-        root.configure(background="white")
-        root.resizable(width=False, height=False)
-
-        #========================================
-
-        #========================================
-        #Terminal Setup
-        element_chat_display = Listbox(root, height=20, width=100)
-        element_chat_display.grid(row=1, column=3)
-        for i in range(element_chat_display.cget('height')-1):
-            element_chat_display.insert(END, '')
-        element_chat_entry = Entry(root, width=100)
-        element_chat_entry.grid(row=2, column=3)
-
-        def func_returninput(event):
-            inp = element_chat_entry.get()
-            #element_chat_display.insert(END, element_chat_entry.get())
-            #element_chat_display.see(END)
-            element_chat_entry.delete(0, END)
-            s.send(str.encode(inp))
-
-
-        #element_chat_output = Text(root, height=20, width=50)
-        #element_chat_output.grid(row=1, column=1)
-        #element_chat_output.config(state=DISABLED)
-
-        root.bind('<Return>', func_returninput)
-        #========================================
-
-        thread_recv_data = threading.Thread(target=recv)
-        thread_recv_data.start()
-        #========================================
-        def on_closing():
-            s.close()
-            root.destroy()
-        root.protocol("WM_DELETE_WINDOW", on_closing)
-        root.mainloop()
+        
+        channel_select_win.mainloop()
     except ConnectionRefusedError:
         temp = Tk()
         temp.withdraw()
@@ -245,8 +281,8 @@ def load():
     
     win_menu.mainloop()
 
-load() 
 
+load()
 
 
 
