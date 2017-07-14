@@ -1,3 +1,3 @@
 # ECHO
 
-ECHO is currently being rewritten. 
+Readme coming soon. It's pretty self-explanatory anyway
