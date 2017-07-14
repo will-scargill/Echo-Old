@@ -1,4 +1,4 @@
-# ECHO
+# ECHO V1.2.1
 
 Readme coming soon. THIS IS NOT FINISHED, there's still a few bugs and a couple of things I still want to add.
 
