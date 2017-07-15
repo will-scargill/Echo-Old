@@ -162,9 +162,26 @@ def connect():
         #Menu Commands
 
         def view_all_users():
-            pass
+            """
+            global server_client_lists
+            popup_users = Tk()
+            popup_users.title("ECHO - User List")
+            
+            message = {
+                "data": "",
+                "msgtype": "USERLIST",
+                "channel": ""
+                }
+            s.send(encode(message))
+            time.sleep(1)
+            label_user_list = Label(popup_users, text=server_client_list)
+            label_user_list.grid(row=0, column=0)
+            """
+            #Still working on this
+            
 
         def disconnect():
+            s.shutdown(socket.SHUT_RDWR)
             s.close()
             root.geometry("600x300")
             frame_mainchat.grid_forget()
@@ -173,6 +190,7 @@ def connect():
             element_listbox_channelselect.unbind("<<ListboxSelect>>")
             blankmenu = Menu(root)
             root.config(menu=blankmenu)
+            root.title("ECHO")
 
             
             
@@ -201,16 +219,22 @@ def connect():
         
         def join_channel(args):
             global selected_channel
+            old_channel = selected_channel
             try:
                 selected_channel = element_listbox_channelselect.get(element_listbox_channelselect.curselection())
             except TclError:
                 pass
+            if old_channel == selected_channel:
+                pass
+            else:
+                element_listbox_chatdisplay.delete(0, END)
             message = {
                 "data": selected_channel,
                 "msgtype": "CHANNELJOIN",
                 "channel": ""
                 }
             s.send(encode(message))
+            
                 
        
 
@@ -290,10 +314,15 @@ def connect():
                             global username
                             username = data["data"]
                             root.title("ECHO - " + username)
+                            
                         elif data["msgtype"] == "MSG-CB":
                             element_listbox_chatdisplay.insert(END, data["data"])
                             element_listbox_chatdisplay.see(END)
                             
+                        elif data["msgtype"] == "USERLIST":
+                            global server_client_list
+                            server_client_list = data["data"]
+                            print(server_client_list)
                     else:
                         pass
                 except socket.error as e:
@@ -340,8 +369,16 @@ def settings_menu():
             conn.commit()
             element_listbox_servers.delete(ACTIVE)
             element_listbox_settings_servers.delete(ACTIVE)
+            for server in variable_servers:
+                print(server)
+                if server[0] == name:
+                    variable_servers.remove(server)
+                else:
+                    pass
+            print(variable_servers)
         else:
             pass
+        
     def update_server():
         name = element_listbox_settings_servers.get(ACTIVE)
         result = messagebox.askquestion("Update", "Are you sure?", icon='warning')
@@ -355,6 +392,7 @@ def settings_menu():
         root.geometry("600x300")
         frame_mainmenu.grid(row=0, column=0)
         frame_settingsmenu.grid_forget()
+        element_listbox_settings_servers.unbind("<<ListboxSelect>>") 
     
     root.geometry("600x300")
     frame_settingsmenu = Frame(root)
@@ -389,7 +427,7 @@ def settings_menu():
     element_button_delete_server = Button(frame_settingsmenu, text="Delete Server", command=del_server, height=2, width=12)
     element_button_delete_server.grid(row=3, column=1)
 
-    element_button_exit_settings = Button(frame_settingsmenu, text="Save and exit", command=save_settings, height=2, width=10)
+    element_button_exit_settings = Button(frame_settingsmenu, text="Exit", command=save_settings, height=2, width=10)
     element_button_exit_settings.grid(row=4, column=2)
 
     element_button_update_server = Button(frame_settingsmenu, text="Update Server", command=update_server, height=2, width=12)
