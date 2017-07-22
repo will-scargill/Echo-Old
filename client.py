@@ -58,7 +58,6 @@ def connect():
         return(data) 
     def decode(data):
         data = data.decode('utf-8') #Decode utf-8 data
-        #data = "".join([data.rsplit("}" , 1)[0] , "}"]) #Join data
         data = json.loads(data) #Load from json
         return(data)
     #========================================
@@ -115,7 +114,7 @@ def connect():
             var_check_continue = 1
             element_label_loading.grid_forget()
         else:
-            def end_error_screen__oserror():
+            def end_error_screen__missingdetailserror():
                 element_label_connerror.grid_forget()
                 element_label_loading.grid_forget()
                 element_button_enderror.grid_forget()
@@ -132,209 +131,271 @@ def connect():
 
     
     if var_check_continue == 1:
+        def main_connection_function():
+            if password_required == True:
+                password = entry_password.get()
+                message = {
+                        "data": password,
+                        "msgtype": "PASSWORD",
+                        "channel": ""
+                        }
+                s.send(encode(message))
 
-        root.title("ECHO - " + username)
+                data = s.recv(1024)
+                data = decode(data)
 
-        message = {
-                "data": username,
-                "msgtype": "USERNAME",
-                "channel": ""
-                }
+                if data["data"] == "rightpass":
 
-        s.send(encode(message))
-        
+                    data = s.recv(1024)
+                    data = decode(data)
+                    server_motd = data["data"]
+     
+                    message = {
+                    "data": username,
+                    "msgtype": "USERNAME",
+                    "channel": ""
+                    }
+
+                    s.send(encode(message))
+                    
+
+                    data = s.recv(1024)
+                    data = decode(data)
+
+                    
+
+                    server_channels = data["data"]
+                    
+                    
+                    root.geometry("600x450")
+
+                    def retrieve_server_infomation():
+                        pass
+                    
+                    frame_mainchat = Frame(root)
+                    frame_mainchat.grid(row=0, column=0)
+                    
+                    #========================================
+                    #Menu Commands
+
+                    def view_all_users():
+                        """
+                        global server_client_lists
+                        popup_users = Tk()
+                        popup_users.title("ECHO - User List")
+                        
+                        message = {
+                            "data": "",
+                            "msgtype": "USERLIST",
+                            "channel": ""
+                            }
+                        s.send(encode(message))
+                        time.sleep(1)
+                        label_user_list = Label(popup_users, text=server_client_list)
+                        label_user_list.grid(row=0, column=0)
+                        """
+                        pass
+                        #Still working on this
+                        
+
+                    def disconnect():
+                        entry_password.grid_forget()
+                        button_submit_password.grid_forget()
+                        label_enter_password.grid_forget()
+                        frame_passreq.grid_forget()
+                        s.shutdown(socket.SHUT_RDWR)
+                        s.close()
+                        root.geometry("600x300")
+                        frame_mainchat.grid_forget()
+                        frame_mainmenu.grid(row=0, column=0)
+                        root.unbind("<Return>")
+                        element_listbox_channelselect.unbind("<<ListboxSelect>>")
+                        blankmenu = Menu(root)
+                        root.config(menu=blankmenu)
+                        root.title("ECHO")
+
+                        
+                        
+                    
+                    
+
+                    #========================================
+                    
+                    #========================================
+                    #Topbar Menu
+
+                    element_menu = Menu(root)
+
+                    root.geometry("900x500")
+
+                    element_menu.add_command(label="View all users", command=view_all_users)
+                    element_menu.add_command(label="Disconnect", command=disconnect)
+
+                    root.config(menu=element_menu)
+                    
+                    #========================================
+
+                    #========================================
+                    #Channel Selection and Client Output
+
+                    
+                    def join_channel(args):
+                        global selected_channel
+                        old_channel = selected_channel
+                        try:
+                            selected_channel = element_listbox_channelselect.get(element_listbox_channelselect.curselection())
+                        except TclError:
+                            pass
+                        if old_channel == selected_channel:
+                            pass
+                        else:
+                            element_listbox_chatdisplay.delete(0, END)
+                        message = {
+                            "data": selected_channel,
+                            "msgtype": "CHANNELJOIN",
+                            "channel": ""
+                            }
+                        s.send(encode(message))
+                        
+                            
+                   
+
+                    element_listbox_channelselect = Listbox(frame_mainchat, height = 20, width=25)
+                    element_listbox_channelselect.grid(row=0, column=0)
+
+                    element_listbox_channelclients = Listbox(frame_mainchat, height = 20, width=25)
+                    element_listbox_channelclients.grid(row=0, column=2)
+
+                    for channel in server_channels:
+                        element_listbox_channelselect.insert(END, channel)
+
+                    
+
+                    element_listbox_channelselect.bind("<<ListboxSelect>>", join_channel) 
+                    #========================================
+                    
+                    element_listbox_chatdisplay = Listbox(frame_mainchat, height=20, width=100)
+                    element_listbox_chatdisplay.grid(row=0, column=1)
+
+                    for i in range(element_listbox_chatdisplay.cget('height')-1):
+                        element_listbox_chatdisplay.insert(END, '')
+
+                    element_listbox_chatdisplay.insert(0, server_motd)
+
+                    def submit_message(args):
+                        global username
+                        user_input = element_entry_chatinput.get()
+                        if selected_channel == "":
+                            element_listbox_chatdisplay.insert(END, "[{}] ".format(username) + str(user_input) )
+                            element_listbox_chatdisplay.see(END)
+                            element_entry_chatinput.delete('0', END)
+                        else:
+                            message = {
+                                "data": "[{}] ".format(username) + str(user_input),
+                                "msgtype": "MSG-SB",
+                                "channel": selected_channel
+                                }
+                            s.send(encode(message))
+                            element_entry_chatinput.delete('0', END)
+
+                    element_entry_chatinput = Entry(frame_mainchat, width=100)
+                    element_entry_chatinput.grid(row=1, column=1)
+
+                    root.bind("<Return>", submit_message)
+
+                    def recv_data():
+                        global selected_channel
+                        s.setblocking(0)
+                        while True:
+                            try:
+                                r, _, _ = select.select([s], [], [])
+                                if r:
+                                    data = s.recv(2048)
+                                    data = decode(data)
+                                    if data["msgtype"] == "MSG":
+                                        pass
+                                    elif data["msgtype"] == "CHANNELCLIENTS":
+                                        channel_clients = data["data"]
+
+                                        element_listbox_channelclients.delete(0, END)
+                                        element_listbox_channelclients.delete(1, END)
+                                        
+                                        for client in channel_clients:
+                                            element_listbox_channelclients.insert(END, client)
+                                    elif data["msgtype"] == "CLIENTDISCONN":
+                                        if data["channel"] != selected_channel:
+                                            pass
+                                        else:
+                                            tempclientlist = element_listbox_channelclients.get(0, END)
+                                            
+                                            for i, j in enumerate(tempclientlist):
+                                                if j == data["data"]:
+                                                    element_listbox_channelclients.delete(i)
+                                                    break
+                                            
+                                            
+                                    elif data["msgtype"] == "USERTAKEN":
+                                        global username
+                                        username = data["data"]
+                                        root.title("ECHO - " + username)
+                                        
+                                    elif data["msgtype"] == "MSG-CB":
+                                        element_listbox_chatdisplay.insert(END, data["data"])
+                                        element_listbox_chatdisplay.see(END)
+                                        
+                                    elif data["msgtype"] == "USERLIST":
+                                        global server_client_list
+                                        server_client_list = data["data"]
+                                        print(server_client_list)
+                                else:
+                                    pass
+                            except socket.error as e:
+                                if e.args[0] == errno.EWOULDBLOCK: 
+                                    time.sleep(0.25)           # short delay, no tight loops
+                                else:
+                                    print(e)
+                                    break
+
+                     
+                    thread_recv_data = threading.Thread(target=recv_data)
+                    thread_recv_data.start()
+                    
+    
+                    
+                elif data["data"] == "wrongpass":
+                    entry_password.grid_forget()
+                    button_submit_password.grid_forget()
+                    label_enter_password.grid_forget()
+                    frame_passreq.grid_forget()
+                    def end_error_screen__wrongpasserror():
+                        element_label_connerror.grid_forget()
+                        element_label_loading.grid_forget()
+                        element_button_enderror.grid_forget()
+                        frame_mainmenu.grid(row=0, column=0)
+                    element_label_connerror = Label(root, text="Error - Password Incorrect")
+                    element_label_connerror.grid(row=0, column=0)
+                    element_button_enderror = Button(root, text="Ok", command=end_error_screen__wrongpasserror, height=2, width=4)
+                    element_button_enderror.grid(row=1, column=0)
 
         data = s.recv(1024)
         data = decode(data)
-
-        server_channels = data["data"]
-        
-        
-        root.geometry("600x450")
-
-        def retrieve_server_infomation():
-            pass
-        
-        frame_mainchat = Frame(root)
-        frame_mainchat.grid(row=0, column=0)
-        
-        #========================================
-        #Menu Commands
-
-        def view_all_users():
-            """
-            global server_client_lists
-            popup_users = Tk()
-            popup_users.title("ECHO - User List")
+        if data["msgtype"] == "PASSREQ":
+            frame_passreq = Frame(root)
+            frame_passreq.grid(row=0, column=0)
+            entry_password = Entry(frame_passreq)
+            entry_password.grid(row=1, column=0)
             
-            message = {
-                "data": "",
-                "msgtype": "USERLIST",
-                "channel": ""
-                }
-            s.send(encode(message))
-            time.sleep(1)
-            label_user_list = Label(popup_users, text=server_client_list)
-            label_user_list.grid(row=0, column=0)
-            """
-            #Still working on this
-            
+            button_submit_password = Button(frame_passreq, text="Submit", command=main_connection_function, height=2, width=10)
+            button_submit_password.grid(row=2, column=0)
 
-        def disconnect():
-            s.shutdown(socket.SHUT_RDWR)
-            s.close()
-            root.geometry("600x300")
-            frame_mainchat.grid_forget()
-            frame_mainmenu.grid(row=0, column=0)
-            root.unbind("<Return>")
-            element_listbox_channelselect.unbind("<<ListboxSelect>>")
-            blankmenu = Menu(root)
-            root.config(menu=blankmenu)
-            root.title("ECHO")
-
-            
-            
-        
-        
-
-        #========================================
-        
-        #========================================
-        #Topbar Menu
-
-        element_menu = Menu(root)
-
-        root.geometry("900x500")
-
-        element_menu.add_command(label="View all users", command=view_all_users)
-        element_menu.add_command(label="Disconnect", command=disconnect)
-
-        root.config(menu=element_menu)
-        
-        #========================================
-
-        #========================================
-        #Channel Selection and Client Output
+            label_enter_password = Label(frame_passreq, text="Enter Password")
+            label_enter_password.grid(row=0, column=0)
+            password_required = True
+        else:
+            main_connection_function()
+            password_required = False
 
         
-        def join_channel(args):
-            global selected_channel
-            old_channel = selected_channel
-            try:
-                selected_channel = element_listbox_channelselect.get(element_listbox_channelselect.curselection())
-            except TclError:
-                pass
-            if old_channel == selected_channel:
-                pass
-            else:
-                element_listbox_chatdisplay.delete(0, END)
-            message = {
-                "data": selected_channel,
-                "msgtype": "CHANNELJOIN",
-                "channel": ""
-                }
-            s.send(encode(message))
-            
-                
-       
-
-        element_listbox_channelselect = Listbox(frame_mainchat, height = 20, width=25)
-        element_listbox_channelselect.grid(row=0, column=0)
-
-        element_listbox_channelclients = Listbox(frame_mainchat, height = 20, width=25)
-        element_listbox_channelclients.grid(row=0, column=2)
-
-        for channel in server_channels:
-            element_listbox_channelselect.insert(END, channel)
-
-        
-
-        element_listbox_channelselect.bind("<<ListboxSelect>>", join_channel) 
-        #========================================
-        
-        element_listbox_chatdisplay = Listbox(frame_mainchat, height=20, width=100)
-        element_listbox_chatdisplay.grid(row=0, column=1)
-
-        for i in range(element_listbox_chatdisplay.cget('height')-1):
-            element_listbox_chatdisplay.insert(END, '')
-
-        def submit_message(args):
-            global username
-            user_input = element_entry_chatinput.get()
-            if selected_channel == "":
-                element_listbox_chatdisplay.insert(END, "[{}] ".format(username) + str(user_input) )
-                element_listbox_chatdisplay.see(END)
-                element_entry_chatinput.delete('0', END)
-            else:
-                message = {
-                    "data": "[{}] ".format(username) + str(user_input),
-                    "msgtype": "MSG-SB",
-                    "channel": selected_channel
-                    }
-                s.send(encode(message))
-                element_entry_chatinput.delete('0', END)
-
-        element_entry_chatinput = Entry(frame_mainchat, width=100)
-        element_entry_chatinput.grid(row=1, column=1)
-
-        root.bind("<Return>", submit_message)
-
-        def recv_data():
-            global selected_channel
-            s.setblocking(0)
-            while True:
-                try:
-                    r, _, _ = select.select([s], [], [])
-                    if r:
-                        data = s.recv(2048)
-                        data = decode(data)
-                        if data["msgtype"] == "MSG":
-                            pass
-                        elif data["msgtype"] == "CHANNELCLIENTS":
-                            channel_clients = data["data"]
-
-                            element_listbox_channelclients.delete(0, END)
-                            element_listbox_channelclients.delete(1, END)
-                            
-                            for client in channel_clients:
-                                element_listbox_channelclients.insert(END, client)
-                        elif data["msgtype"] == "CLIENTDISCONN":
-                            if data["channel"] != selected_channel:
-                                pass
-                            else:
-                                tempclientlist = element_listbox_channelclients.get(0, END)
-                                
-                                for i, j in enumerate(tempclientlist):
-                                    if j == data["data"]:
-                                        element_listbox_channelclients.delete(i)
-                                        break
-                                
-                                
-                        elif data["msgtype"] == "USERTAKEN":
-                            global username
-                            username = data["data"]
-                            root.title("ECHO - " + username)
-                            
-                        elif data["msgtype"] == "MSG-CB":
-                            element_listbox_chatdisplay.insert(END, data["data"])
-                            element_listbox_chatdisplay.see(END)
-                            
-                        elif data["msgtype"] == "USERLIST":
-                            global server_client_list
-                            server_client_list = data["data"]
-                            print(server_client_list)
-                    else:
-                        pass
-                except socket.error as e:
-                    if e.args[0] == errno.EWOULDBLOCK: 
-                        time.sleep(0.25)           # short delay, no tight loops
-                    else:
-                        print(e)
-                        break
-
-         
-        thread_recv_data = threading.Thread(target=recv_data)
-        thread_recv_data.start()
         
     elif var_check_continue == 0:
         pass
