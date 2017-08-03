@@ -10,6 +10,8 @@ import select
 import errno
 import operator
 
+ECHO_CLIENT_VER = "V1.2.5"
+
 #========================================
 # SQLite Setup
 
@@ -358,6 +360,7 @@ def connect():
                             if e.args[0] == errno.EWOULDBLOCK: 
                                 time.sleep(0.25)           # short delay, no tight loops
                             else:
+                                print("Debug Printout")
                                 print(e)
                                 break
 
@@ -382,27 +385,49 @@ def connect():
                 element_button_enderror = Button(root, text="Ok", command=end_error_screen__wrongpasserror, height=2, width=4)
                 element_button_enderror.grid(row=1, column=0)
 
+
+        message = {
+            "data": ECHO_CLIENT_VER,
+            "msgtype": "CLIENTVER",
+            "channel": ""
+            }
+        s.send(encode(message))
         data = s.recv(1024)
         data = decode(data)
-        global password_required
-        if data["msgtype"] == "PASSREQ":
-            frame_passreq = Frame(root)
-            frame_passreq.grid(row=0, column=0)
-            entry_password = Entry(frame_passreq)
-            entry_password.grid(row=1, column=0)
-            entry_password.focus()
-            
-            button_submit_password = Button(frame_passreq, text="Submit", command=main_connection_function, height=2, width=10)
-            button_submit_password.grid(row=2, column=0)
-
-            label_enter_password = Label(frame_passreq, text="Enter Password")
-            label_enter_password.grid(row=0, column=0)
+        if data["data"] == "rightver":
+            data = s.recv(1024)
+            data = decode(data)
             global password_required
-            global password_accepted
-            password_required = True
+            if data["msgtype"] == "PASSREQ":
+                frame_passreq = Frame(root)
+                frame_passreq.grid(row=0, column=0)
+                entry_password = Entry(frame_passreq)
+                entry_password.grid(row=1, column=0)
+                entry_password.focus()
+                
+                button_submit_password = Button(frame_passreq, text="Submit", command=main_connection_function, height=2, width=10)
+                button_submit_password.grid(row=2, column=0)
+
+                label_enter_password = Label(frame_passreq, text="Enter Password")
+                label_enter_password.grid(row=0, column=0)
+                global password_required
+                global password_accepted
+                password_required = True
+            else:
+                password_required = False
+                main_connection_function()
         else:
-            password_required = False
-            main_connection_function()
+            def end_error_screen__oserror():
+                element_label_connerror.grid_forget()
+                element_label_loading.grid_forget()
+                element_button_enderror.grid_forget()
+                frame_mainmenu.grid(row=0, column=0)
+            element_label_connerror = Label(root, text="Error - Wrong Version")
+            element_label_connerror.grid(row=0, column=0)
+            element_button_enderror = Button(root, text="Ok", command=end_error_screen__oserror, height=2, width=4)
+            element_button_enderror.grid(row=1, column=0)
+        
+        
 
         
         
