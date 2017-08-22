@@ -10,7 +10,7 @@ import select
 import errno
 import operator
 
-ECHO_CLIENT_VER = "V1.2.5"
+ECHO_CLIENT_VER = "V1.3"
 
 #========================================
 # SQLite Setup
@@ -154,7 +154,7 @@ def connect():
                 data = s.recv(1024)
                 data = decode(data)
                 server_motd = data["data"]
- 
+
                 message = {
                 "data": username,
                 "msgtype": "USERNAME",
@@ -204,10 +204,10 @@ def connect():
                     
 
                 def disconnect():
-                    entry_password.grid_forget()
-                    button_submit_password.grid_forget()
-                    label_enter_password.grid_forget()
-                    frame_passreq.grid_forget()
+                    try:
+                        frame_passreq.grid_forget()
+                    except NameError:
+                        pass
                     s.shutdown(socket.SHUT_RDWR)
                     s.close()
                     root.geometry("600x300")
@@ -353,15 +353,49 @@ def connect():
                                 elif data["msgtype"] == "USERLIST":
                                     global server_client_list
                                     server_client_list = data["data"]
-                                    print(server_client_list)
+                                elif data["msgtype"] == "KICKED":
+                                    frame_mainchat.grid_forget()
+                                    try:
+                                        frame_passreq.grid_forget()
+                                    except NameError:
+                                        pass
+                                    def end_error_screen__wrongpasserror():
+                                        element_label_kicked.grid_forget()
+                                        #####element_label_loading.grid_forget()
+                                        element_button_enderror.grid_forget()
+                                        frame_mainmenu.grid(row=0, column=0)
+                                    element_label_kicked = Label(root, text="You have been kicked from the server")
+                                    element_label_kicked.grid(row=0, column=0)
+                                    element_button_enderror = Button(root, text="Ok", command=end_error_screen__wrongpasserror, height=2, width=4)
+                                    element_button_enderror.grid(row=1, column=0)
+                                    root.geometry("600x300")
+                                    break
+                                elif data["msgtype"] == "BAN":
+                                    frame_mainchat.grid_forget()
+                                    try:
+                                        frame_passreq.grid_forget()
+                                    except NameError:
+                                        pass
+                                    def end_error_screen__wrongpasserror():
+                                        element_label_kicked.grid_forget()
+                                        #####element_label_loading.grid_forget()
+                                        element_button_enderror.grid_forget()
+                                        frame_mainmenu.grid(row=0, column=0)
+                                    element_label_kicked = Label(root, text="You have been banned from the server")
+                                    element_label_kicked.grid(row=0, column=0)
+                                    element_button_enderror = Button(root, text="Ok", command=end_error_screen__wrongpasserror, height=2, width=4)
+                                    element_button_enderror.grid(row=1, column=0)
+                                    root.geometry("600x300")
+                                    break
                             else:
                                 pass
                         except socket.error as e:
                             if e.args[0] == errno.EWOULDBLOCK: 
-                                time.sleep(0.25)           # short delay, no tight loops
+                                time.sleep(0.25)
                             else:
-                                print("Debug Printout")
+                                print("Debug Printout ==Start==")
                                 print(e)
+                                print("Debug Printout ==End==")
                                 break
 
                  
@@ -385,47 +419,59 @@ def connect():
                 element_button_enderror = Button(root, text="Ok", command=end_error_screen__wrongpasserror, height=2, width=4)
                 element_button_enderror.grid(row=1, column=0)
 
-
-        message = {
-            "data": ECHO_CLIENT_VER,
-            "msgtype": "CLIENTVER",
-            "channel": ""
-            }
-        s.send(encode(message))
         data = s.recv(1024)
         data = decode(data)
-        if data["data"] == "rightver":
-            data = s.recv(1024)
-            data = decode(data)
-            global password_required
-            if data["msgtype"] == "PASSREQ":
-                frame_passreq = Frame(root)
-                frame_passreq.grid(row=0, column=0)
-                entry_password = Entry(frame_passreq)
-                entry_password.grid(row=1, column=0)
-                entry_password.focus()
-                
-                button_submit_password = Button(frame_passreq, text="Submit", command=main_connection_function, height=2, width=10)
-                button_submit_password.grid(row=2, column=0)
-
-                label_enter_password = Label(frame_passreq, text="Enter Password")
-                label_enter_password.grid(row=0, column=0)
-                global password_required
-                global password_accepted
-                password_required = True
-            else:
-                password_required = False
-                main_connection_function()
-        else:
+        if data["data"] == "banned":
             def end_error_screen__oserror():
                 element_label_connerror.grid_forget()
                 element_label_loading.grid_forget()
                 element_button_enderror.grid_forget()
                 frame_mainmenu.grid(row=0, column=0)
-            element_label_connerror = Label(root, text="Error - Wrong Version")
+            element_label_connerror = Label(root, text="Error - You are banned from this server")
             element_label_connerror.grid(row=0, column=0)
             element_button_enderror = Button(root, text="Ok", command=end_error_screen__oserror, height=2, width=4)
             element_button_enderror.grid(row=1, column=0)
+        elif data["data"] == "notbanned":
+            message = {
+                "data": ECHO_CLIENT_VER,
+                "msgtype": "CLIENTVER",
+                "channel": ""
+                }
+            s.send(encode(message))
+            data = s.recv(1024)
+            data = decode(data)
+            if data["data"] == "rightver":
+                data = s.recv(1024)
+                data = decode(data)
+                global password_required
+                if data["msgtype"] == "PASSREQ":
+                    frame_passreq = Frame(root)
+                    frame_passreq.grid(row=0, column=0)
+                    entry_password = Entry(frame_passreq)
+                    entry_password.grid(row=1, column=0)
+                    entry_password.focus()
+                    
+                    button_submit_password = Button(frame_passreq, text="Submit", command=main_connection_function, height=2, width=10)
+                    button_submit_password.grid(row=2, column=0)
+
+                    label_enter_password = Label(frame_passreq, text="Enter Password")
+                    label_enter_password.grid(row=0, column=0)
+                    global password_required
+                    global password_accepted
+                    password_required = True
+                else:
+                    password_required = False
+                    main_connection_function()
+            else:
+                def end_error_screen__oserror():
+                    element_label_connerror.grid_forget()
+                    element_label_loading.grid_forget()
+                    element_button_enderror.grid_forget()
+                    frame_mainmenu.grid(row=0, column=0)
+                element_label_connerror = Label(root, text="Error - Wrong Version")
+                element_label_connerror.grid(row=0, column=0)
+                element_button_enderror = Button(root, text="Ok", command=end_error_screen__oserror, height=2, width=4)
+                element_button_enderror.grid(row=1, column=0)
         
         
 
@@ -465,12 +511,10 @@ def settings_menu():
             element_listbox_servers.delete(ACTIVE)
             element_listbox_settings_servers.delete(ACTIVE)
             for server in variable_servers:
-                print(server)
                 if server[0] == name:
                     variable_servers.remove(server)
                 else:
                     pass
-            print(variable_servers)
         else:
             pass
         
