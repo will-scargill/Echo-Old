@@ -10,7 +10,7 @@ import select
 import errno
 import operator
 
-ECHO_CLIENT_VER = "V1.3"
+ECHO_CLIENT_VER = "V1.4"
 
 #========================================
 # SQLite Setup
@@ -33,7 +33,7 @@ for table in tables:
         c.execute("CREATE TABLE " +
                   
                   table["name"] + " (" + table["columns"] + ")")
-        c.execute("INSERT INTO servers (name, ip, port) VALUES ('ECHO Official Server', '194.135.84.73', 6666)")
+        c.execute("INSERT INTO servers (name, ip, port) VALUES ('ECHO Official Server', '144.172.89.154', 6666)")
         conn.commit()
 
 
@@ -151,6 +151,7 @@ def connect():
                 elif data["data"] == "wrongpass":
                     password_required = True
             if password_required == False:
+                #MAIN PROGRAM START
                 data = s.recv(1024)
                 data = decode(data)
                 server_motd = data["data"]
@@ -448,6 +449,7 @@ def connect():
                     frame_passreq = Frame(root)
                     frame_passreq.grid(row=0, column=0)
                     entry_password = Entry(frame_passreq)
+                    entry_password.configure(show="*")
                     entry_password.grid(row=1, column=0)
                     entry_password.focus()
                     
