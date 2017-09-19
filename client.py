@@ -10,7 +10,7 @@ import select
 import errno
 import operator
 
-ECHO_CLIENT_VER = "V1.4.1"
+ECHO_CLIENT_VER = "V1.4.2" # DO NOT CHANGE
 
 #========================================
 # SQLite Setup
@@ -197,7 +197,6 @@ def connect():
                         }
                     s.send(encode(message))
                     time.sleep(1)
-                    print(server_client_list)
                     user_labels = {}
                     i = 0
                     for cl in server_client_list:
@@ -367,7 +366,7 @@ def connect():
                                         #####element_label_loading.grid_forget()
                                         element_button_enderror.grid_forget()
                                         frame_mainmenu.grid(row=0, column=0)
-                                    element_label_kicked = Label(root, text="You have been kicked from the server")
+                                    element_label_kicked = Label(root, text="You have been kicked from the server - Reason: " + data["data"])
                                     element_label_kicked.grid(row=0, column=0)
                                     element_button_enderror = Button(root, text="Ok", command=end_error_screen__wrongpasserror, height=2, width=4)
                                     element_button_enderror.grid(row=1, column=0)
@@ -384,7 +383,7 @@ def connect():
                                         #####element_label_loading.grid_forget()
                                         element_button_enderror.grid_forget()
                                         frame_mainmenu.grid(row=0, column=0)
-                                    element_label_kicked = Label(root, text="You have been banned from the server")
+                                    element_label_kicked = Label(root, text="You have been banned from the server - Reason: " + data["data"])
                                     element_label_kicked.grid(row=0, column=0)
                                     element_button_enderror = Button(root, text="Ok", command=end_error_screen__wrongpasserror, height=2, width=4)
                                     element_button_enderror.grid(row=1, column=0)
@@ -424,17 +423,17 @@ def connect():
 
         data = s.recv(1024)
         data = decode(data)
-        if data["data"] == "banned":
+        if data["data"][0] == "banned":
             def end_error_screen__oserror():
                 element_label_connerror.grid_forget()
                 element_label_loading.grid_forget()
                 element_button_enderror.grid_forget()
                 frame_mainmenu.grid(row=0, column=0)
-            element_label_connerror = Label(root, text="Error - You are banned from this server")
+            element_label_connerror = Label(root, text="Error - You are banned from this server - Reason: " + str(data["data"][1]))
             element_label_connerror.grid(row=0, column=0)
             element_button_enderror = Button(root, text="Ok", command=end_error_screen__oserror, height=2, width=4)
             element_button_enderror.grid(row=1, column=0)
-        elif data["data"] == "notbanned":
+        elif data["data"][0] == "notbanned":
             message = {
                 "data": ECHO_CLIENT_VER,
                 "msgtype": "CLIENTVER",
