@@ -10,7 +10,7 @@ import select
 import errno
 import operator
 
-ECHO_CLIENT_VER = "V1.4"
+ECHO_CLIENT_VER = "V1.4.1"
 
 #========================================
 # SQLite Setup
@@ -65,6 +65,7 @@ def connect():
     #========================================
     server_name = element_listbox_servers.get(ACTIVE)
     username = element_entry_username.get()
+    
     
     frame_mainmenu.grid_forget()
     element_label_loading = Label(root, text="Trying to connect...")
@@ -185,11 +186,10 @@ def connect():
                 #Menu Commands
 
                 def view_all_users():
-                    """
+                    
                     global server_client_lists
                     popup_users = Tk()
                     popup_users.title("ECHO - User List")
-                    
                     message = {
                         "data": "",
                         "msgtype": "USERLIST",
@@ -197,11 +197,13 @@ def connect():
                         }
                     s.send(encode(message))
                     time.sleep(1)
-                    label_user_list = Label(popup_users, text=server_client_list)
-                    label_user_list.grid(row=0, column=0)
-                    """
-                    pass
-                    #Still working on this
+                    print(server_client_list)
+                    user_labels = {}
+                    i = 0
+                    for cl in server_client_list:
+                        i += 1
+                        user_labels[cl] = Label(popup_users, text=cl)
+                        user_labels[cl].grid(row=i, column=0)
                     
 
                 def disconnect():
