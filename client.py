@@ -10,7 +10,7 @@ import select
 import errno
 import operator
 
-ECHO_CLIENT_VER = "V1.4.2" # DO NOT CHANGE
+ECHO_CLIENT_VER = "V1.5" # DO NOT CHANGE
 
 #========================================
 # SQLite Setup
@@ -62,6 +62,8 @@ def connect():
         data = data.decode('utf-8') #Decode utf-8 data
         data = json.loads(data) #Load from json
         return(data)
+    
+        
     #========================================
     server_name = element_listbox_servers.get(ACTIVE)
     username = element_entry_username.get()
@@ -180,7 +182,9 @@ def connect():
                     pass
                 
                 frame_mainchat = Frame(root)
-                frame_mainchat.grid(row=0, column=0)
+                frame_mainchat.grid(row=0, column=0, sticky='nsew')
+                frame_mainchat.columnconfigure(1, weight=1)
+                frame_mainchat.rowconfigure(0, weight=1)
                 
                 #========================================
                 #Menu Commands
@@ -250,6 +254,9 @@ def connect():
                     global selected_channel
                     old_channel = selected_channel
                     try:
+                        element_listbox_chatdisplay.delete(0, END)
+                        for i in range(element_listbox_chatdisplay.cget('height')-1):
+                            element_listbox_chatdisplay.insert(0, '')
                         selected_channel = element_listbox_channelselect.get(element_listbox_channelselect.curselection())
                     except TclError:
                         pass
@@ -266,25 +273,26 @@ def connect():
                         }
                     s.send(encode(message))
                     
-                        
-               
+                def refresh(args):
+                    element_listbox_chatdisplay.see(END)
+                    
 
                 element_listbox_channelselect = Listbox(frame_mainchat, height = 20, width=25)
-                element_listbox_channelselect.grid(row=0, column=0)
-
+                element_listbox_channelselect.grid(row=0, column=0, sticky='nsew')
+                
                 element_listbox_channelclients = Listbox(frame_mainchat, height = 20, width=25)
-                element_listbox_channelclients.grid(row=0, column=2)
+                element_listbox_channelclients.grid(row=0, column=2, sticky='nsew')
 
                 for channel in server_channels:
                     element_listbox_channelselect.insert(END, channel)
 
-                
+                frame_mainchat.bind("<Configure>", refresh)
 
                 element_listbox_channelselect.bind("<<ListboxSelect>>", join_channel) 
                 #========================================
                 
-                element_listbox_chatdisplay = Listbox(frame_mainchat, height=20, width=100)
-                element_listbox_chatdisplay.grid(row=0, column=1)
+                element_listbox_chatdisplay = Listbox(frame_mainchat, height=65, width=100)
+                element_listbox_chatdisplay.grid(row=0, column=1, sticky='nsew')
 
                 for i in range(element_listbox_chatdisplay.cget('height')-1):
                     element_listbox_chatdisplay.insert(0, '')
@@ -297,7 +305,7 @@ def connect():
                     if selected_channel == "":
                         element_listbox_chatdisplay.insert(END, "[{}] ".format(username) + str(user_input) )
                         element_listbox_chatdisplay.see(END)
-                        element_entry_chatinput.delete('0', END)
+                        element_entry_chatinput.delete(0, END)
                     else:
                         message = {
                             "data": "[{}] ".format(username) + str(user_input),
@@ -305,10 +313,12 @@ def connect():
                             "channel": selected_channel
                             }
                         s.send(encode(message))
-                        element_entry_chatinput.delete('0', END)
+                        element_entry_chatinput.delete(0, END)
 
                 element_entry_chatinput = Entry(frame_mainchat, width=100)
-                element_entry_chatinput.grid(row=1, column=1)
+                element_entry_chatinput.grid(row=1, column=1, sticky='nsew')
+                element_entry_chatinput.columnconfigure(1, weight=1)
+                element_entry_chatinput.rowconfigure(1, weight=1)
 
                 root.bind("<Return>", submit_message)
 
@@ -319,10 +329,17 @@ def connect():
                         try:
                             r, _, _ = select.select([s], [], [])
                             if r:
-                                data = s.recv(2048)
+                                data = s.recv(4096)
                                 data = decode(data)
                                 if data["msgtype"] == "MSG":
                                     pass
+                                elif data["msgtype"] == "CHANNELHISTORY":
+                                    #pass
+                                    for item in data["data"]:
+                                        #print(data["data"])
+                                        element_listbox_chatdisplay.insert(END, ((item[2][8:][:2]) + (item[2][4:][:3]) + "|" + (item[2][11:][:5]) + "| " + item[3]))
+                                        element_listbox_chatdisplay.itemconfig(END, fg=item[4])
+                                        #print((item[2][8:][:2]) + (item[2][4:][:3]) + "|" + (item[2][11:][:5]) + "| " + item[3])
                                 elif data["msgtype"] == "CHANNELCLIENTS":
                                     channel_clients = data["data"]
 
@@ -340,18 +357,18 @@ def connect():
                                         for i, j in enumerate(tempclientlist):
                                             if j == data["data"]:
                                                 element_listbox_channelclients.delete(i)
-                                                break
-                                        
-                                        
+                                                break     
                                 elif data["msgtype"] == "USERTAKEN":
                                     global username
                                     username = data["data"]
                                     root.title("ECHO - " + username)
                                     
                                 elif data["msgtype"] == "MSG-CB":
+                                    print(data["data"])
+                                    print(data["colour"])
                                     element_listbox_chatdisplay.insert(END, data["data"])
-                                    element_listbox_chatdisplay.see(END)
-                                    
+                                    element_listbox_chatdisplay.itemconfig(END, fg=data["colour"])
+                                    element_listbox_chatdisplay.see(END)                                    
                                 elif data["msgtype"] == "USERLIST":
                                     global server_client_list
                                     server_client_list = data["data"]
